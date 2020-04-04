@@ -20,6 +20,7 @@ type writer struct {
 func (w *writer) Write(b []byte) (n int, err error) {
 	sizeBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(sizeBytes, uint32(len(b)))
-	all := append(append(b, sizeBytes...), Bytes...)
+	all := make([]byte, 0, len(b)+len(sizeBytes)+len(Bytes))
+	all = append(append(append(all, b...), sizeBytes...), Bytes...)
 	return w.w.Write(all)
 }

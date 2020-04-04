@@ -24,6 +24,7 @@ type reader struct {
 	readSeeker io.ReadSeeker
 }
 
+// ErrMagicBytesNotFound is returned when the magic bytes are not found.
 var ErrMagicBytesNotFound = errors.New("magic bytes not found")
 
 func (r *reader) Read() ([]byte, error) {
