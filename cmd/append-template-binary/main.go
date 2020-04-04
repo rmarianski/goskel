@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"errors"
 	"flag"
 	"fmt"
@@ -38,9 +37,6 @@ func run(flags *flags) (err error) {
 	if err != nil {
 		return fmt.Errorf("read template path=%s err=%s", flags.template, err)
 	}
-	sizeBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(sizeBytes, uint32(len(templateBytes)))
-	b := append(append(templateBytes, sizeBytes...), magic.Bytes...)
 	f, err := os.OpenFile(flags.binary, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("open binary append: %s", err)
@@ -51,9 +47,9 @@ func run(flags *flags) (err error) {
 			err = closeErr
 		}
 	}()
-	_, err = f.Write(b)
-	if err != nil {
-		return fmt.Errorf("write binary: %s", err)
+	magicWriter := magic.NewWriter(f)
+	if _, err := magicWriter.Write(templateBytes); err != nil {
+		return fmt.Errorf("magic: %s", err)
 	}
 	return err
 }
