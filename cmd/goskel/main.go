@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/rmarianski/goskel/pkg/magic"
@@ -20,7 +22,20 @@ func main() {
 }
 
 func run(binaryPath, name string) error {
-	f, err := os.Open(binaryPath)
+	var binaryReadPath string
+	if strings.ContainsRune(binaryPath, os.PathSeparator) {
+		binaryReadPath = binaryPath
+	} else {
+		p, err := findBinaryPath(binaryPath)
+		if err != nil {
+			return fmt.Errorf("find binary path: %s", err)
+		}
+		if p == "" {
+			return errors.New("binary not found in path")
+		}
+		binaryReadPath = p
+	}
+	f, err := os.Open(binaryReadPath)
 	if err != nil {
 		return fmt.Errorf("read binary path: %s", err)
 	}
@@ -59,4 +74,20 @@ func run(binaryPath, name string) error {
 		return fmt.Errorf("close main.go: %s", err)
 	}
 	return nil
+}
+
+func findBinaryPath(binaryName string) (string, error) {
+	envPath := os.Getenv("PATH")
+	if envPath == "" {
+		return "", errors.New("PATH env not set")
+	}
+	paths := strings.Split(envPath, string(os.PathListSeparator))
+	for _, p := range paths {
+		binaryPath := path.Join(p, binaryName)
+		_, err := os.Stat(binaryPath)
+		if err == nil {
+			return binaryPath, nil
+		}
+	}
+	return "", nil
 }
